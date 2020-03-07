@@ -1,0 +1,94 @@
+diff --git a/Makefile.am b/Makefile.am
+index f5dab89..8c90f30 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -6,7 +6,7 @@ ACLOCAL_AMFLAGS = -I conf -I gl/m4
+ aclocaldir=$(datadir)/aclocal
+ pkgconfigdir=$(libdir)/pkgconfig
+ 
+-AM_CPPFLAGS = -I$(top_builddir)/gl -I$(top_srcdir)/gl -I$(top_srcdir)/GNU $(XML2_CFLAGS)
++AM_CPPFLAGS = -I$(top_builddir)/gl -I$(top_srcdir)/gl -I$(top_srcdir)/GNU $(XML2_CFLAGS) $(TIRPC_CFLAGS)
+ AM_CXXFLAGS = 
+ 
+ if COMPILER_IS_GCC
+@@ -47,7 +47,7 @@ man_MANS = getdap.1 dap-config.1 getdap4.1
+ 	groff -t -e -mandoc -Tascii $< | col -bx > $@
+ 
+ libparsers_la_SOURCES = $(FLEX_SRC) $(BISON_SRC)  
+-libparsers_la_CPPFLAGS = $(XML2_CFLAGS)
++libparsers_la_CPPFLAGS = $(XML2_CFLAGS) $(TIRPC_CFLAGS)
+ libparsers_la_LIBADD = $(XML2_LIBS)
+ 
+ libdap_la_SOURCES = $(DAP_SRC) $(GNU_SRC)
+diff --git a/conf/acinclude.m4 b/conf/acinclude.m4
+index 63a17e7..df3d7c9 100644
+--- a/conf/acinclude.m4
++++ b/conf/acinclude.m4
+@@ -558,12 +558,23 @@ AC_DEFUN([DODS_CHECK_SIZES], [dnl
+     #
+     # Unfortunately, there is little commonality about xdr
+ 
+-    # First, we need to see if the xdr routines are in libc, librpc,
++    # First, we need to see if the xdr routines are in libtirpc, libc, librpc,
+     # or librpcsvc or libnsl
+     dap_xdrlib=
+-    AC_SEARCH_LIBS([xdr_void],[c rpc nsl rpcsvc],[
+-      dap_xdrlib=`echo $ac_res|sed -e 's/^-l//'`],[
+-      AC_MSG_WARN(Cannot locate library containing xdr functions.)])
++	PKG_PROG_PKG_CONFIG([0.9.0])
++	PKG_CHECK_MODULES([TIRPC], [libtirpc >= 0.2.4],
++		[dap_xdrlib=`echo "${TIRPC_LIBS}" | sed -e 's/^-l//'`
++		AC_SUBST([TIRPC_CFLAGS])
++		AC_SUBST([TIRPC_LIBS])
++		AC_DEFINE([HAVE_LIBTIRPC], [1], [Define to 1 to use libtirpc.])],
++		[dap_xdrlib=""]
++	)
++	AS_IF(
++	[test "$dap_xdrlib" = ""],
++    	[AC_SEARCH_LIBS([xdr_void],[c rpc nsl rpcsvc],[
++    	  dap_xdrlib=`echo $ac_res|sed -e 's/^-l//'`],[
++    	  AC_MSG_WARN(Cannot locate library containing xdr functions.)])])
++
+     # Added for autoconf 2.59 which appears to not use/set $ac_res. jhrg
+     if test -z "$dap_xdrlib" ; then dap_xdrlib=c; fi
+     if test "$dap_xdrlib" = "none required" ; then dap_xdrlib=c; fi
+diff --git a/d4_ce/Makefile.am b/d4_ce/Makefile.am
+index aa1a070..fcae7a4 100644
+--- a/d4_ce/Makefile.am
++++ b/d4_ce/Makefile.am
+@@ -7,7 +7,7 @@ AUTOMAKE_OPTIONS = foreign
+ .NOTPARALLEL:
+ 
+ # Arrange to build with the backward compatibility mode enabled.
+-AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/d4_ce -I$(srcdir) $(XML2_CFLAGS)
++AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/d4_ce -I$(srcdir) $(XML2_CFLAGS) $(TIRPC_CFLAGS)
+ AM_CXXFLAGS =  
+ 
+ if COMPILER_IS_GCC
+diff --git a/tests/Makefile.am b/tests/Makefile.am
+index f32e7d0..d51d255 100644
+--- a/tests/Makefile.am
++++ b/tests/Makefile.am
+@@ -4,7 +4,7 @@ AUTOMAKE_OPTIONS = foreign
+ 
+ # Arrange to build with the backward compatibility mode enabled.
+ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/GNU -I$(top_srcdir)/d4_ce \
+--I$(top_srcdir)/d4_function $(XML2_CFLAGS) $(CURL_CFLAGS)
++-I$(top_srcdir)/d4_function $(XML2_CFLAGS) $(CURL_CFLAGS) $(TIRPC_CFLAGS)
+ AM_CXXFLAGS =  
+ 
+ if COMPILER_IS_GCC
+diff --git a/unit-tests/Makefile.am b/unit-tests/Makefile.am
+index be70132..c5ae5e7 100644
+--- a/unit-tests/Makefile.am
++++ b/unit-tests/Makefile.am
+@@ -7,7 +7,8 @@ AUTOMAKE_OPTIONS = foreign
+ 
+ # Headers in 'tests' are used by the arrayT unit tests.
+ 
+-AM_CPPFLAGS = -I$(top_srcdir)/GNU -I$(top_srcdir) -I$(top_srcdir)/tests $(CURL_CFLAGS) $(XML2_CFLAGS)
++AM_CPPFLAGS = -I$(top_srcdir)/GNU -I$(top_srcdir) -I$(top_srcdir)/tests \
++$(CURL_CFLAGS) $(XML2_CFLAGS) $(TIRPC_CFLAGS)
+ AM_LDADD = $(XML2_LIBS)
+ AM_CXXFLAGS = 
+ # CXXFLAGS =
