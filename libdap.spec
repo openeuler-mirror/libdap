@@ -1,6 +1,6 @@
 Name:          libdap
 Version:       3.19.1
-Release:       3
+Release:       4
 Summary:       The DAP++ SDK
 License:       LGPLv2+
 URL:           http://www.opendap.org/
@@ -9,7 +9,10 @@ Source0:       http://www.opendap.org/pub/source/%{name}-%{version}.tar.gz
 Patch0000:     https://raw.githubusercontent.com/funtoo/science-kit/master/sci-libs/libdap/files/libdap-3.19.1-use-libtirpc.patch
 
 BuildRequires: bison >= 3.0 cppunit-devel curl-devel doxygen flex gcc-c++ graphviz libtirpc-devel
-BuildRequires: libtool libuuid-devel libxml2-devel openssl-devel pkgconfig valgrind
+BuildRequires: libtool libuuid-devel libxml2-devel openssl-devel pkgconfig
+%ifarch %{valgrind_arches}
+ BuildRequires: valgrind
+%endif
 
 Provides:      bundled(gnulib)
 
@@ -78,5 +81,8 @@ make check || :
 %{_mandir}/man1/*
 
 %changelog
+* Sat Sep 18 2021 sunhaoxiang <maxim2010@163.com> - 3.19.1-4
+- Modify the trigger condition of BuildRequires: valgrind
+
 * Fri Mar 6 2020 zhouyihang<zhouyihang1@huawei.com> - 3.19.1-3
 - Pakcage init
